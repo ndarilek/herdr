@@ -1,5 +1,7 @@
 use super::*;
 
+use ratatui::layout::Position;
+
 fn restore_mode_bar(
     frame: &mut FrameData,
     bar: Option<Rect>,
@@ -443,7 +445,10 @@ impl ClientShellState {
                                 .bg(self.config.palette.accent)
                                 .add_modifier(Modifier::BOLD),
                         );
-                        frame.replace_from_ratatui_buffer_preserving_effects(&composed, None);
+                        frame.replace_from_ratatui_buffer_preserving_effects(
+                            &composed,
+                            Some(focus::hidden_cursor(Position::new(x, y))),
+                        );
                     } else {
                         frame.cursor = None;
                     }
@@ -678,6 +683,7 @@ impl ClientShellState {
                 self.hits.navigator_popup = rendered.navigator_popup;
                 self.hits.navigator_search = rendered.navigator_search;
                 self.hits.navigator_rows = rendered.navigator_rows;
+                self.hits.navigator_selected = rendered.navigator_selected;
                 self.hits.navigator_scrollbar = rendered.navigator_scrollbar;
                 self.hits.navigator_scroll_metrics = rendered.navigator_scroll_metrics;
                 self.hits.worktree_search = rendered.worktree_search;
@@ -713,6 +719,9 @@ impl ClientShellState {
             notes.scroll = notes
                 .scroll
                 .min(u16::try_from(self.hits.release_notes_max_scroll).unwrap_or(u16::MAX));
+        }
+        if let Some(position) = self.focus_anchor(frame.cursor.as_ref(), valid_navigation_target) {
+            frame.cursor = Some(focus::hidden_cursor(position));
         }
         if self.endpoint_status(&self.active_endpoint_id) != Some(ClientEndpointStatus::Online) {
             frame.cursor = None;
